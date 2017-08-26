@@ -18,7 +18,7 @@ func init() {
     fmt.Fprintf( os.Stderr, "[CRITICAL] Bot token not set:\n" )
     os.Exit(1)
   }
-  //  Create the DiscordGo session object
+  // Create the DiscordGo session object
   var session_err error
   discord, session_err = discordgo.New("Bot "+bot_token)
   if session_err != nil {
@@ -46,21 +46,18 @@ func main() {
   }
 
   fmt.Println("Bot online.")
-  self_data, self_data_err := discord.Request(
-    "GET",
-    discordgo.EndpointUsers + "/@me",
-    "application/json", 
-  )
-  if self_data_err != nil {
+  bot_user, bot_user_err := discord.User("@me")
+  if bot_user_err != nil {
     fmt.Printf(
-      "[ERROR] Unable to request information about self: %s\n",
-      self_data_err.Error(),
+      "[CRITICAL] Unable to get bot user's information - Please double check "+
+      "your credentials.\n%s\n",
+      bot_user_err.Error(),
     )
   } else {
     fmt.Printf(
-      "%v\n", 
-      self_data,
-    ) 
+      "Invite URL: "+
+      "https://discordapp.com/oauth2/authorize"+
+      "?&client_id=%s&scope=bot&permissions=0\n", bot_user.ID)
   }
   fmt.Println("Press CTRL-C to exit.")
   sc := make(chan os.Signal, 1)
