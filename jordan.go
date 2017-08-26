@@ -70,14 +70,51 @@ func onMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
   // Log all messages
   var msg_prefix string
   if isDirectMessage(s, m) == true {
-    msg_prefix = "MESSAGE_PRIVATE"
+    msg_prefix = "[MESSAGE_PRIVATE]"
   } else {
-    msg_prefix = "MESSAGE_PUBLIC"
+    // Logic based on the FAQ entry:
+    // github.com/bwmarrin/discordgo/wiki/FAQ#getting-the-guild-from-a-message
+    // Attempt to get the channel from the state.
+    // If there is an error, fall back to the restapi
+    channel, err := discord.State.Channel(m.ChannelID)
+    if err != nil {
+        channel, err = discord.Channel(m.ChannelID)
+        if err != nil {
+          fmt.Fprintf(
+            os.Stderr,
+            "Unable to obtain channel from m.ChannelID",
+          )
+          return
+        }
+    }
+
+    // Attempt to get the guild from the state,
+    // If there is an error, fall back to the restapi.
+    guild, err := discord.State.Guild(channel.GuildID)
+    if err != nil {
+        guild, err = discord.Guild(channel.GuildID)
+        if err != nil {
+          fmt.Fprintf(
+            os.Stderr,
+            "Unable to obtain guild from channel's GuildID",
+          )
+          return
+        }
+    }
+    msg_prefix = fmt.Sprintf(
+      "[MESSAGE_PUBLIC][%s (%s)#%s (%s)]",
+      guild.Name,
+      guild.ID,
+      channel.Name,
+      channel.ID,
+    )
   }
 
   fmt.Fprintf(os.Stdout,
-    "[%s] %s\n",
+    "%s[%s (%s)] %s\n",
     msg_prefix,
+    m.Author.String(),
+    m.Author.ID,
     m.Content,
   )
   // Ignore all messages created by the bot itself
