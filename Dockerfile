@@ -1,7 +1,10 @@
-FROM golang:1.8
+FROM golang:1.9 as compiler
 WORKDIR /go/src/app
 COPY . .
-RUN go-wrapper download
-RUN go-wrapper install
-RUN go get github.com/bwmarrin/discordgo
-CMD [ "go-wrapper", "run" ]
+RUN go-wrapper download \
+  && go-wrapper install \
+  && go build -o /usr/local/sbin/jordango
+
+FROM golang:1.9
+COPY --from=compiler /usr/local/sbin/jordango ./jordango
+ENTRYPOINT [ "./jordango" ]
